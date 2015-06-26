@@ -42,7 +42,7 @@ function generateLineChart(){
 
     svg.append("g")
         .attr("class", "yaxis axis")
-        .call(yAxis)
+        .call(yAxis);
 
     var g = svg.append("g");
         
@@ -92,10 +92,10 @@ function generateLineChart(){
 function generateKeyStats(id,keystats,cases,deaths){
     
     var html = '<div class="col-xs-6">';
-    html = html + '<p  class="stat_title">Cases</p><p class="stat">'+cases[cases.length-1]["value"] + '<p>';
+    html = html + '<p  class="stat_title">Cases</p><p class="stat">'+formatComma(cases[cases.length-1]["value"]) + '<p>';
     html = html + '<p class="stat_title">Population</p><p class="stat">'+keystats["population"] + '<p>';   
     html = html + '</div><div class="col-xs-6">';
-    html = html + '<p  class="stat_title">Deaths</p><p class="stat">'+deaths[deaths.length-1]["value"] + '<p>';
+    html = html + '<p  class="stat_title">Deaths</p><p class="stat">'+formatComma(deaths[deaths.length-1]["value"]) + '<p>';
     html = html + '<p  class="stat_title">Crude Mortality Rate</p><p class="stat">'+Math.round(deaths[deaths.length-1]["value"]/cases[cases.length-1]["value"]*100) + '%<p>';
     html=html+'</div>';
     $(id).html(html);
@@ -142,13 +142,13 @@ function generateMap(){
         .attr("stroke",'#aaaaaa')
         .attr("stroke-width","0px")
         .attr("fill",'#ffffff')
-        .attr("id",function(d){return d.properties.PCODE_REF;})
+        .attr("id",function(d){return d.properties.PCODEUSE;})
         .attr("class","region")
         .on("mouseover",function(d){
             d3.select(this).attr("stroke-width",7);
             d3.select(this).attr("stroke","steelblue");
-            transitionLineChart(d.properties.PCODE_REF,true);
-            transitionTitles(d.properties.NAME_REF,true);
+            transitionLineChart(d.properties.PCODEUSE,true);
+            transitionTitles(d.properties.NAMEUSE,true);
         })
         .on("mouseout",function(d){
             d3.select(this).attr("stroke","#aaaaaa");
@@ -161,15 +161,15 @@ function generateMap(){
             }
         })        
         .append("svg:title")
-        .text(function(d) { return d.properties.NAME_REF; });   
-    sumNewCasesByRegion.all().forEach(function(e) {  
+        .text(function(d) { return d.properties.NAMEUSE; });   
+    sumNewConfirmedCasesByRegion.all().forEach(function(e) {  
     if(e.value==0){
                 d3.select("#"+e.key).attr("fill",color[0]);
-            } else if(e.value<25){
+            } else if(e.value<10){
                 d3.select("#"+e.key).attr("fill",color[1]);
-            } else if(e.value<50){
+            } else if(e.value<25){
                 d3.select("#"+e.key).attr("fill",color[2]);
-            } else if(e.value<100){
+            } else if(e.value<50){
                 d3.select("#"+e.key).attr("fill",color[3]);
             } else {
                 d3.select("#"+e.key).attr("fill",color[4]);
@@ -276,7 +276,7 @@ function generateMap(){
     g.append("text")
         .attr("x",15+legendx)
         .attr("y",48+legendy)
-        .text("1 to 25 cases in the last 2 weeks")
+        .text("1 to 9 cases in the last 2 weeks")
         .attr("font-size","10px");
 
     g.append("rect")
@@ -289,7 +289,7 @@ function generateMap(){
     g.append("text")
         .attr("x",15+legendx)
         .attr("y",68+legendy)
-        .text("25 to 49 cases in the last 2 weeks")
+        .text("10 to 24 cases in the last 2 weeks")
         .attr("font-size","10px");
 
     g.append("rect")
@@ -302,7 +302,7 @@ function generateMap(){
     g.append("text")
         .attr("x",15+legendx)
         .attr("y",88+legendy)
-        .text("50 to 99 cases in the last 2 weeks")
+        .text("25 to 49 cases in the last 2 weeks")
         .attr("font-size","10px");
 
     g.append("rect")
@@ -315,7 +315,7 @@ function generateMap(){
     g.append("text")
         .attr("x",15+legendx)
         .attr("y",108+legendy)
-        .text("100+ cases in the last 2 weeks")
+        .text("50+ cases in the last 2 weeks")
         .attr("font-size","10px");
 
     g.append("circle")
@@ -487,7 +487,7 @@ function generateBarChart(filter){
         byWeek.filter(function(d){
           return $.inArray(d.valueOf(), lastWeeks) > -1;
         });             
-        var data=sumNewCasesByCountry.all();        
+        var data=sumNewConfirmedCasesByCountry.all();        
     } else {
         byWeek.filterAll();
         byCountry.filterAll();
@@ -499,7 +499,7 @@ function generateBarChart(filter){
           return $.inArray(d.valueOf(), lastWeeks) > -1;
         });        
 
-        var datatemp=sumNewCasesByRegionName.all();
+        var datatemp=sumNewConfirmedCasesByRegionName.all();
         var data =[];
         for(var i = datatemp.length - 1; i >= 0; i--) {
             if(datatemp[i].value !== 0) {
@@ -611,11 +611,19 @@ byDate = cf.dimension(function(d){return d.WeekDate;});
 var sumNewCasesByRegionName = byRegionName.group().reduceSum(function(d){return d.NewCases;});
 var sumNewCasesByRegion = byRegion.group().reduceSum(function(d){return d.NewCases;});
 var sumNewCasesByCountry = byCountry.group().reduceSum(function(d){return d.NewCases;});
+
+var sumNewConfirmedCasesByRegionName = byRegionName.group().reduceSum(function(d){return d.NewConfirmedCases;});
+var sumNewConfirmedCasesByRegion = byRegion.group().reduceSum(function(d){return d.NewConfirmedCases;});
+var sumNewConfirmedCasesByCountry = byCountry.group().reduceSum(function(d){return d.NewConfirmedCases;});
+
 var totalCasesByDate = byDate.group().reduceSum(function(d){return d.CumulativeCases;});
 //var totalCasesByDate = byDate.group();
 var totalDeathsByDate = byDate.group().reduceSum(function(d){return d.CumulativeDeaths;});
 
-var lastWeeks = [parseDate("29/12/2014").valueOf(),parseDate("05/01/2014").valueOf()];
+var lastWeeks = [parseDate("22/06/2015").valueOf(),parseDate("15/06/2015").valueOf()];
+
+//helper function for formatting numbers with comma separator for thousands
+var formatComma = d3.format(",");
 
 $('#update_date').html(cases['Total'][cases['Total'].length-1]['key'].toDateString()); 
 generateLineChart();
